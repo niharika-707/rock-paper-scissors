@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rock Paper Scissors</title>
+    <style>
+      body {
+        background: linear-gradient(
+          -45deg,
+          #ff9a9e,
+          #fad0c4,
+          #fbc2eb,
+          #a18cd1,
+          #a1c4fd,
+          #c2e9fb
+        );
+        background-size: 600% 600%;
+        animation: gradientBG 20s ease infinite;
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        overflow: hidden;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .input-card {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 20px 30px;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .input-card input,
+      .input-card select {
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 16px;
+        border: 2px solid #888;
+        border-radius: 8px;
+        width: 250px;
+      }
+
+      .input-card input:focus,
+      .input-card select:focus {
+        outline: none;
+        border-color: #28a745;
+        box-shadow: 0 0 8px #28a745;
+      }
+
+      #start-game-btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        padding: 10px 20px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      #start-game-btn:hover {
+        background-color: #218838;
+      }
+
+      .choice-btn {
+        width: 100px;
+        height: 100px;
+        font-size: 50px;
+        border-radius: 50%;
+        border: 2px solid #333;
+        background: white;
+        cursor: pointer;
+        margin: 10px;
+        transition: 0.3s;
+      }
+
+      .choice-btn:hover {
+        background: #333;
+        color: white;
+        transform: scale(1.1);
+      }
+
+      .results,
+      .score {
+        margin: 10px;
+        font-size: 20px;
+      }
+
+      .score {
+        background: rgba(255, 255, 255, 0.8);
+        padding: 10px 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        display: inline-block;
+      }
+
+      .reset-btn {
+        padding: 10px 20px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      #winner-display {
+        font-size: 24px;
+        font-weight: bold;
+        color: darkgreen;
+        margin-top: 15px;
+      }
+
+      .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: red;
+        opacity: 0.8;
+        animation: confettiFall 3s linear forwards;
+      }
+
+      @keyframes confettiFall {
+        0% {
+          transform: translateY(-100px) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(360deg);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rock Paper Scissors</h1>
+
+    <div class="input-card" id="input-section">
+      <input type="text" id="player-name" placeholder="Enter your name" />
+      <select id="rounds-select">
+        <option value="10">Best of 10</option>
+        <option value="15">Best of 15</option>
+        <option value="20">Best of 20</option>
+      </select>
+      <button id="start-game-btn">Start Game</button>
+    </div>
+
+    <div id="game-screen" style="display: none">
+      <div>
+        <button class="choice-btn" data-choice="rock">✊</button>
+        <button class="choice-btn" data-choice="paper">✋</button>
+        <button class="choice-btn" data-choice="scissors">✌️</button>
+      </div>
+
+      <div class="results" id="result-text"></div>
+      <div class="score" id="score-board">Score - You: 0 | CPU: 0</div>
+      <div id="winner-display"></div>
+      <button class="reset-btn" onclick="resetGame()">Reset</button>
+    </div>
+
+    <script>
+      const playerNameInput = document.getElementById("player-name");
+      const roundsSelect = document.getElementById("rounds-select");
+      const startBtn = document.getElementById("start-game-btn");
+      const inputSection = document.getElementById("input-section");
+      const gameScreen = document.getElementById("game-screen");
+      const resultText = document.getElementById("result-text");
+      const scoreBoard = document.getElementById("score-board");
+      const winnerDisplay = document.getElementById("winner-display");
+
+      let playerName = "";
+      let playerScore = 0;
+      let cpuScore = 0;
+      let winTarget = 10;
+
+      startBtn.onclick = () => {
+        playerName = playerNameInput.value.trim() || "Player";
+        winTarget = parseInt(roundsSelect.value);
+        inputSection.style.display = "none";
+        gameScreen.style.display = "block";
+      };
+
+      document.querySelectorAll(".choice-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (playerScore >= winTarget || cpuScore >= winTarget) return;
+
+          const playerChoice = btn.getAttribute("data-choice");
+          const cpuChoice = ["rock", "paper", "scissors"][
+            Math.floor(Math.random() * 3)
+          ];
+
+          let result = "";
+
+          if (playerChoice === cpuChoice) {
+            result = "It's a draw!";
+          } else if (
+            (playerChoice === "rock" && cpuChoice === "scissors") ||
+            (playerChoice === "paper" && cpuChoice === "rock") ||
+            (playerChoice === "scissors" && cpuChoice === "paper")
+          ) {
+            result = `${playerName} wins this round! 🎉`;
+            playerScore++;
+            showConfetti();
+          } else {
+            result = "CPU wins this round!";
+            cpuScore++;
+          }
+
+          resultText.textContent = `${playerName} chose ${playerChoice} | CPU chose ${cpuChoice} → ${result}`;
+          scoreBoard.textContent = `Score - ${playerName}: ${playerScore} | CPU: ${cpuScore}`;
+
+          if (playerScore === winTarget || cpuScore === winTarget) {
+            const finalWinner =
+              playerScore > cpuScore
+                ? `${playerName} wins the match! 🏆`
+                : `CPU wins the match! 🏆`;
+            winnerDisplay.innerHTML = `<strong>${finalWinner}</strong>`;
+            document
+              .querySelectorAll(".choice-btn")
+              .forEach((btn) => (btn.disabled = true));
+          }
+        });
+      });
+
+      function resetGame() {
+        playerScore = 0;
+        cpuScore = 0;
+        resultText.textContent = "";
+        scoreBoard.textContent = `Score - ${playerName}: 0 | CPU: 0`;
+        winnerDisplay.textContent = "";
+        inputSection.style.display = "flex";
+        gameScreen.style.display = "none";
+        document
+          .querySelectorAll(".choice-btn")
+          .forEach((btn) => (btn.disabled = false));
+      }
+
+      function showConfetti() {
+        for (let i = 0; i < 20; i++) {
+          const confetti = document.createElement("div");
+          confetti.classList.add("confetti");
+          confetti.style.left = Math.random() * 100 + "vw";
+          confetti.style.backgroundColor = `hsl(${
+            Math.random() * 360
+          }, 100%, 60%)`;
+          document.body.appendChild(confetti);
+          setTimeout(() => confetti.remove(), 3000);
+        }
+      }
+    </script>
+  </body>
+</html>
